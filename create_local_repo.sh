@@ -4,7 +4,14 @@ set -e
 # --- 설정 (Makefile 또는 환경변수에서 설정 가능, 없으면 기본값 사용) ---
 DEBS_DIR=${DEBS_DIR:-"debs"}
 
-REPO_DIR="./${DEBS_DIR}"
+# DEBS_DIR이 절대 경로인지 상대 경로인지 판단
+if [[ "${DEBS_DIR}" = /* ]]; then
+    # 절대 경로인 경우 그대로 사용
+    REPO_DIR="${DEBS_DIR}"
+else
+    # 상대 경로인 경우 현재 디렉토리 기준으로 절대 경로 생성
+    REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/${DEBS_DIR}"
+fi
 
 echo "=== 로컬 저장소 확인 ==="
 if [ ! -d "$REPO_DIR" ]; then
