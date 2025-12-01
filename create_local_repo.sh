@@ -48,16 +48,23 @@ fi
 
 # 2. Packages.gz 파일 확인
 if [ ! -f "$REPO_DIR/Packages.gz" ]; then
-    echo -e "${YELLOW}경고: Packages.gz 파일이 '$REPO_DIR'에 없습니다.${NC}"
-    echo "저장소 인덱스가 없어도 등록을 진행합니다."
+    echo -e "${RED}오류: Packages.gz 파일이 '$REPO_DIR'에 없습니다.${NC}"
+    echo "저장소를 먼저 빌드해야 합니다: make build-repo"
+    exit 1
 fi
 
-# 3. 로컬 저장소를 등록
+# 3. 권한 설정 (_apt 사용자가 접근 가능하도록)
+echo "저장소 권한을 설정합니다..."
+sudo chmod -R 755 "$REPO_DIR"
+sudo chmod 644 "$REPO_DIR"/*.deb 2>/dev/null || true
+sudo chmod 644 "$REPO_DIR/Packages.gz"
+
+# 4. 로컬 저장소를 등록
 # [trusted=yes] 옵션은 GPG 키 서명 없이 설치하게 해줍니다.
 echo "로컬 저장소를 등록합니다: $REPO_DIR"
 echo "deb [trusted=yes] file:$REPO_DIR ./" | sudo tee /etc/apt/sources.list.d/local-offline.list
 
-# 4. 패키지 목록 업데이트
+# 5. 패키지 목록 업데이트
 echo "패키지 목록을 업데이트합니다..."
 sudo apt-get update
 
