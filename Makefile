@@ -31,18 +31,20 @@ help:
 	@echo "  ARCHIVE_NAME  = ${ARCHIVE_NAME}"
 	@echo "  REPO_PATH     = ${REPO_PATH}"
 	@echo ""
-	@echo "Usage:"
-	@echo "  --- Workflow ---"
-	@echo "  make download         - [온라인 PC] 1. 모든 .deb 패키지를 '${DEBS_DIR}/' 폴더로 다운로드합니다."
-	@echo "  make local-repo       - [온라인 PC] 2. 다운로드된 폴더를 APT 로컬 저장소로 만듭니다."
-	@echo "  make install-repo     - [온라인 PC] 3. 생성된 로컬 저장소를 시스템 경로 '${REPO_PATH}'에 설치하고 권한을 설정합니다."
-	@echo "  make add-local-repo   - [온라인 PC] 4. 설치된 시스템 저장소를 현재 PC의 APT 소스에 추가하여 즉시 사용 가능하게 합니다."
-	@echo "  make repo             - [온라인 PC] 2-1. (압축만 필요시) 로컬 저장소를 생성하고, 전체 키트를 '${ARCHIVE_NAME}' 파일로 압축합니다."
+	@echo "--- 워크플로우 A: 온라인에서 처음부터 빌드 ---"
+	@echo "  make download         - 1. 모든 필수 .deb 패키지를 다운로드합니다."
+	@echo "  make add-local-repo   - 2. (테스트용) 다운로드한 패키지를 시스템 저장소로 설치하고 현재 PC의 APT 소스에 추가합니다."
+	@echo "  make repo             - 2. (배포용) 다운로드한 패키지를 오프라인 배포용 '${ARCHIVE_NAME}' 파일로 압축합니다."
 	@echo ""
-	@echo "  --- 기타 명령어 ---"
-	@echo "  make install-online   - [온라인 PC] 인터넷을 사용해 현재 PC에 패키지를 직접 설치합니다."
-	@echo "  make install-offline  - [오프라인 서버] 압축 해제 후, 설치를 진행하는 방법을 안내합니다."
-	@echo "  make clean            - [모든 PC] 빌드 결과물, 시스템 저장소 및 APT 소스 리스트를 모두 삭제합니다."
+	@echo "--- 워크플로우 B: 이미 .deb 파일이 있는 경우 ---"
+	@echo "  (먼저, '${DEBS_DIR}' 폴더에 직접 .deb 파일들을 위치시키세요)"
+	@echo "  make add-local-repo   - 1. (테스트용) 기존 패키지를 시스템 저장소로 설치하고 현재 PC의 APT 소스에 추가합니다."
+	@echo "  make repo             - 1. (배포용) 기존 패키지를 오프라인 배포용 '${ARCHIVE_NAME}' 파일로 압축합니다."
+	@echo ""
+	@echo "--- 기타 명령어 ---"
+	@echo "  make install-online   - [온라인 PC] 인터넷을 통해 패키지를 직접 설치합니다."
+	@echo "  make install-offline  - [오프라인 서버] 압축 해제 후, 설치 방법을 안내합니다."
+	@echo "  make clean            - [모든 PC] 생성된 모든 파일, 시스템 저장소, APT 소스를 삭제합니다."
 	@echo ""
 	@echo "Configuration Override:"
 	@echo "  '.env' 파일을 생성하여 위 변수들의 값을 변경할 수 있습니다. (예: echo 'REPO_PATH := /opt/my-repo' > .env)"
@@ -52,7 +54,7 @@ download:
 	@chmod +x download_dependencies.sh
 	@./download_dependencies.sh
 
-local-repo: download
+local-repo:
 	@echo ">>> 로컬 APT 저장소 생성을 시작합니다..."
 	@chmod +x create_local_repo.sh
 	@./create_local_repo.sh
