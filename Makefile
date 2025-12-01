@@ -18,7 +18,7 @@ SHELL := /bin/bash
 
 # --- Targets ---
 
-.PHONY: all help build-repo add-local-repo repo install-offline clean
+.PHONY: all help build-repo add-local-repo create-local-repo repo install-offline clean
 
 all: help
 
@@ -34,6 +34,7 @@ help:
 	@echo "=== 온라인 PC 워크플로우 ==="
 	@echo "  make build-repo       - [온라인] 패키지 다운로드 및 Packages.gz 생성"
 	@echo "  make add-local-repo   - [온라인] 로컬 저장소를 현재 PC의 APT 소스에 추가"
+	@echo "  make create-local-repo - [모든 환경] 현재 디렉토리를 APT 소스에 직접 등록"
 	@echo "  make repo             - [온라인] 오프라인 배포용 아카이브 생성"
 	@echo ""
 	@echo "=== 오프라인 서버 워크플로우 ==="
@@ -56,6 +57,11 @@ add-local-repo:
 	@echo ">>> 로컬 저장소를 APT 소스에 추가합니다..."
 	@chmod +x setup_local_repo.sh
 	@sudo ./setup_local_repo.sh
+
+create-local-repo:
+	@echo ">>> 현재 디렉토리를 APT 소스에 등록합니다..."
+	@chmod +x create_local_repo.sh
+	@./create_local_repo.sh
 
 repo:
 	@echo ">>> 오프라인 배포용 아카이브를 생성합니다..."
