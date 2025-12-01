@@ -17,7 +17,7 @@ SHELL := /bin/bash
 
 # --- Targets ---
 
-.PHONY: all help download local-repo repo install-online install-offline clean
+.PHONY: all help download local-repo add-local-repo repo install-online install-offline clean
 
 all: help
 
@@ -30,12 +30,13 @@ help:
 	@echo "  ARCHIVE_NAME  = ${ARCHIVE_NAME}"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make download        - [온라인 PC] Lustre/OFED 설치에 필요한 모든 .deb 패키지와 의존성을 '${DEBS_DIR}/' 폴더로 다운로드합니다."
-	@echo "  make local-repo      - [온라인 PC] 다운로드된 .deb 파일들을 이용해 '${DEBS_DIR}/' 폴더를 APT 로컬 저장소로 만듭니다. (Packages.gz 인덱싱)"
-	@echo "  make repo            - [온라인 PC] 로컬 저장소를 생성하고, 전체 프로젝트를 오프라인 서버로 가져갈 수 있도록 '${ARCHIVE_NAME}' 파일로 압축합니다."
-	@echo "  make install-online  - [온라인 PC] 인터넷을 사용해 현재 PC에 Lustre/OFED 관련 패키지를 직접 설치합니다. (오프라인 키트 생성 불필요 시)"
-	@echo "  make install-offline - [오프라인 서버] 압축 해제 후, 설치를 진행하는 방법을 안내합니다. (실제 설치는 안내된 명령어를 직접 실행해야 합니다)"
-	@echo "  make clean           - [모든 PC] 빌드 과정에서 생성된 '${DEBS_DIR}/' 폴더, '${ARCHIVE_NAME}' 파일 등 모든 결과물을 삭제합니다."
+	@echo "  make download         - [온라인 PC] 모든 .deb 패키지와 의존성을 '${DEBS_DIR}/' 폴더로 다운로드합니다."
+	@echo "  make local-repo       - [온라인 PC] 다운로드된 .deb 파일들로 '${DEBS_DIR}/' 폴더를 APT 로컬 저장소로 만듭니다."
+	@echo "  make add-local-repo   - [온라인 PC] 생성된 로컬 저장소를 현재 PC의 APT 소스에 추가하여 바로 사용할 수 있게 합니다."
+	@echo "  make repo             - [온라인 PC] 로컬 저장소를 생성하고, 전체 키트를 '${ARCHIVE_NAME}' 파일로 압축합니다."
+	@echo "  make install-online   - [온라인 PC] 인터넷을 사용해 현재 PC에 Lustre/OFED 관련 패키지를 직접 설치합니다."
+	@echo "  make install-offline  - [오프라인 서버] 압축 해제 후, 설치를 진행하는 방법을 안내합니다."
+	@echo "  make clean            - [모든 PC] 빌드 결과물 및 APT 소스 리스트를 삭제합니다."
 	@echo ""
 	@echo "Configuration Override:"
 	@echo "  '.env' 파일을 생성하여 위 변수들의 값을 변경할 수 있습니다."
@@ -50,6 +51,11 @@ local-repo: download
 	@echo ">>> 로컬 APT 저장소 생성을 시작합니다..."
 	@chmod +x create_local_repo.sh
 	@./create_local_repo.sh
+
+add-local-repo: local-repo
+	@echo ">>> 현재 시스템의 APT 소스 리스트에 로컬 저장소를 추가합니다..."
+	@chmod +x add_local_repo_to_sources.sh
+	@sudo ./add_local_repo_to_sources.sh
 
 repo: local-repo
 	@echo ">>> 전체 아카이브 생성을 시작합니다..."
@@ -75,4 +81,6 @@ clean:
 	@echo ">>> 생성된 파일들을 삭제합니다..."
 	@rm -rf ./${DEBS_DIR}
 	@rm -f ../${ARCHIVE_NAME}
+	@echo ">>> APT 소스 리스트에서 로컬 저장소 설정을 삭제합니다..."
+	@sudo rm -f /etc/apt/sources.list.d/local-builder-repo.list
 	@echo ">>> 완료."
