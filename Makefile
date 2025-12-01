@@ -66,8 +66,8 @@ install-repo: local-repo
 	@chmod +x install_local_repo.sh
 	@sudo ./install_local_repo.sh
 
-add-local-repo: install-repo
-	@echo ">>> 현재 시스템의 APT 소스 리스트에 시스템 저장소를 추가합니다..."
+add-local-repo: local-repo
+	@echo ">>> 현재 시스템의 APT 소스 리스트에 로컬 저장소를 추가합니다..."
 	@chmod +x add_local_repo_to_sources.sh
 	@sudo ./add_local_repo_to_sources.sh
 
