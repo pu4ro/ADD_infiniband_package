@@ -1,0 +1,9 @@
+# Environment variables
+.env
+
+# Build artifacts
+debs/
+*.tar.gz
+
+# OFED installation directories
+MLNX_OFED_LINUX-*/
