@@ -6,20 +6,17 @@ DEBS_DIR=${DEBS_DIR:-"debs"}
 
 REPO_DIR="./${DEBS_DIR}"
 
-echo "=== Packages.gz 인덱스 파일 생성 ==="
-if [ -d "$REPO_DIR" ]; then
-    cd "$REPO_DIR"
-    
-    echo "패키지 스캔 중... (in $(pwd))"
-    # 패키지 스캔 및 인덱스 생성 (핵심 단계)
-    dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
-    
-    echo ">> Packages.gz 생성 완료!"
-    cd ..
-else
-    echo "오류: '$REPO_DIR' 폴더가 없습니다. 'make download'를 먼저 실행하세요."
+echo "=== 로컬 저장소 확인 ==="
+if [ ! -d "$REPO_DIR" ]; then
+    echo "오류: '$REPO_DIR' 폴더가 없습니다."
     exit 1
 fi
 
-echo "=== 로컬 저장소 생성 완료! ==="
-echo "'${DEBS_DIR}' 폴더가 이제 APT 저장소로 사용될 수 있습니다."
+if [ ! -f "$REPO_DIR/Packages.gz" ]; then
+    echo "경고: '$REPO_DIR/Packages.gz' 파일이 없습니다."
+    echo "해당 폴더에 Packages.gz 파일이 이미 생성되어 있어야 합니다."
+    exit 1
+fi
+
+echo "=== 로컬 저장소 확인 완료! ==="
+echo "'${DEBS_DIR}' 폴더가 APT 저장소로 사용될 수 있습니다."
