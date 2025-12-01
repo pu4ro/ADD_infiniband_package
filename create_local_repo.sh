@@ -7,9 +7,10 @@ set -e
 # DEBS_DIR 또는 현재 디렉토리를 APT 로컬 저장소로 등록합니다.
 # ==============================================================================
 
-# .env 파일이 있으면 DEBS_DIR 로드
+# .env 파일이 있으면 DEBS_DIR 로드 (Makefile 형식 처리)
 if [ -f ".env" ]; then
-    export $(cat .env | grep -v '^#' | grep 'DEBS_DIR' | xargs)
+    # DEBS_DIR := value 형식을 DEBS_DIR=value로 변환
+    eval $(cat .env | grep -v '^#' | grep 'DEBS_DIR' | sed 's/:=/=/g' | sed 's/\s//g')
 fi
 
 # DEBS_DIR 환경 변수 처리
