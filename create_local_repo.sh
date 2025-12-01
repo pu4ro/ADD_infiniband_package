@@ -15,8 +15,8 @@ if [ -f ".env" ]; then
         [[ -z "$line" ]] && continue
         # DEBS_DIR만 처리
         if [[ "$line" =~ DEBS_DIR ]]; then
-            # := 를 = 로 변환하고 export
-            line=$(echo "$line" | sed 's/:=/=/g' | sed 's/^\s*export\s*//g')
+            # := 를 = 로 변환하고 공백 제거
+            line=$(echo "$line" | sed 's/:=/=/g' | sed 's/\s*=\s*/=/g' | sed 's/^\s*export\s*//g')
             export "$line"
         fi
     done < .env

@@ -20,8 +20,8 @@ setup_env() {
             # 주석과 빈 줄 건너뛰기
             [[ "$line" =~ ^#.*$ ]] && continue
             [[ -z "$line" ]] && continue
-            # := 를 = 로 변환하고 export
-            line=$(echo "$line" | sed 's/:=/=/g' | sed 's/^\s*export\s*//g')
+            # := 를 = 로 변환하고 공백 제거
+            line=$(echo "$line" | sed 's/:=/=/g' | sed 's/\s*=\s*/=/g' | sed 's/^\s*export\s*//g')
             export "$line"
         done < .env
     fi
