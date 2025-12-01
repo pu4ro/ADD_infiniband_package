@@ -6,12 +6,7 @@ DEBS_DIR=${DEBS_DIR:-"debs"}
 
 REPO_DIR="./${DEBS_DIR}"
 
-echo "=== 1. 로컬 저장소 생성 도구 설치 (dpkg-dev) ==="
-# Packages.gz를 만들기 위해 dpkg-scanpackages 명령어가 필요합니다.
-sudo apt-get update
-sudo apt-get install -y dpkg-dev
-
-echo "=== 2. Packages.gz 인덱스 파일 생성 ==="
+echo "=== Packages.gz 인덱스 파일 생성 ==="
 if [ -d "$REPO_DIR" ]; then
     cd "$REPO_DIR"
     
