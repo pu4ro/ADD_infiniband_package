@@ -11,7 +11,6 @@
 export TARGET_KERNEL  ?= 5.15.0-25-generic
 export DEBS_DIR       ?= debs
 export ARCHIVE_NAME   ?= offline_kit.tar.gz
-export REPO_PATH      ?= /repo
 export OFED_DIR       ?=
 
 # --- Shell ---
@@ -19,7 +18,7 @@ SHELL := /bin/bash
 
 # --- Targets ---
 
-.PHONY: all help download local-repo install-repo add-local-repo repo install-online install-offline clean
+.PHONY: all help build-repo add-local-repo repo install-offline clean
 
 all: help
 
@@ -30,56 +29,38 @@ help:
 	@echo "  TARGET_KERNEL = ${TARGET_KERNEL}"
 	@echo "  DEBS_DIR      = ${DEBS_DIR}"
 	@echo "  ARCHIVE_NAME  = ${ARCHIVE_NAME}"
-	@echo "  REPO_PATH     = ${REPO_PATH}"
 	@echo "  OFED_DIR      = ${OFED_DIR} (비어있으면 자동 탐지)"
 	@echo ""
-	@echo "--- 워크플로우 A: 온라인에서 처음부터 빌드 ---"
-	@echo "  make download         - 1. 모든 필수 .deb 패키지를 다운로드합니다."
-	@echo "  make add-local-repo   - 2. (테스트용) 다운로드한 패키지를 시스템 저장소로 설치하고 현재 PC의 APT 소스에 추가합니다."
-	@echo "  make repo             - 2. (배포용) 다운로드한 패키지를 오프라인 배포용 '${ARCHIVE_NAME}' 파일로 압축합니다."
+	@echo "=== 온라인 PC 워크플로우 ==="
+	@echo "  make build-repo       - [온라인] 패키지 다운로드 및 Packages.gz 생성"
+	@echo "  make add-local-repo   - [온라인] 로컬 저장소를 현재 PC의 APT 소스에 추가"
+	@echo "  make repo             - [온라인] 오프라인 배포용 아카이브 생성"
 	@echo ""
-	@echo "--- 워크플로우 B: 이미 .deb 파일이 있는 경우 ---"
-	@echo "  (먼저, '${DEBS_DIR}' 폴더에 직접 .deb 파일들을 위치시키세요)"
-	@echo "  make add-local-repo   - 1. (테스트용) 기존 패키지를 시스템 저장소로 설치하고 현재 PC의 APT 소스에 추가합니다."
-	@echo "  make repo             - 1. (배포용) 기존 패키지를 오프라인 배포용 '${ARCHIVE_NAME}' 파일로 압축합니다."
+	@echo "=== 오프라인 서버 워크플로우 ==="
+	@echo "  make install-offline  - [오프라인] 압축 해제 후 설치 방법 안내"
 	@echo ""
-	@echo "--- 기타 명령어 ---"
-	@echo "  make install-online   - [온라인 PC] 인터넷을 통해 패키지를 직접 설치합니다."
-	@echo "  make install-offline  - [오프라인 서버] 압축 해제 후, 설치 방법을 안내합니다."
-	@echo "  make clean            - [모든 PC] 생성된 모든 파일, 시스템 저장소, APT 소스를 삭제합니다."
+	@echo "=== 기타 ==="
+	@echo "  make clean            - 생성된 모든 파일 및 APT 소스 삭제"
+	@echo "  make help             - 이 도움말 표시"
 	@echo ""
 	@echo "Configuration Override:"
-	@echo "  '.env' 파일을 생성하여 위 변수들의 값을 변경할 수 있습니다. (예: echo 'OFED_DIR := my_ofed_dir' > .env)"
+	@echo "  '.env' 파일을 생성하여 위 변수들의 값을 변경할 수 있습니다."
+	@echo "  예: cp .env.example .env && vi .env"
 
-download:
-	@echo ">>> 의존성 패키지 다운로드를 시작합니다..."
-	@chmod +x download_dependencies.sh
-	@./download_dependencies.sh
+build-repo:
+	@echo ">>> 온라인 저장소 빌드를 시작합니다..."
+	@chmod +x build_repo.sh
+	@./build_repo.sh
 
-local-repo:
-	@echo ">>> 로컬 APT 저장소 생성을 시작합니다..."
-	@chmod +x create_local_repo.sh
-	@./create_local_repo.sh
+add-local-repo:
+	@echo ">>> 로컬 저장소를 APT 소스에 추가합니다..."
+	@chmod +x setup_local_repo.sh
+	@sudo ./setup_local_repo.sh
 
-install-repo: local-repo
-	@echo ">>> 로컬 저장소를 시스템 경로에 설치합니다..."
-	@chmod +x install_local_repo.sh
-	@sudo ./install_local_repo.sh
-
-add-local-repo: local-repo
-	@echo ">>> 현재 시스템의 APT 소스 리스트에 로컬 저장소를 추가합니다..."
-	@chmod +x add_local_repo_to_sources.sh
-	@sudo ./add_local_repo_to_sources.sh
-
-repo: local-repo
-	@echo ">>> 전체 아카이브 생성을 시작합니다..."
-	@chmod +x create_repo_archive.sh
-	@./create_repo_archive.sh
-
-install-online:
-	@echo ">>> 온라인 설치를 시작합니다..."
-	@chmod +x install_online.sh
-	@sudo ./install_online.sh
+repo:
+	@echo ">>> 오프라인 배포용 아카이브를 생성합니다..."
+	@chmod +x build_repo.sh
+	@./build_repo.sh --create-archive
 
 install-offline:
 	@echo "========================= 오프라인 설치 안내 ========================="
@@ -95,7 +76,6 @@ clean:
 	@echo ">>> 생성된 파일들을 삭제합니다..."
 	@rm -rf ./${DEBS_DIR}
 	@rm -f ../${ARCHIVE_NAME}
-	@echo ">>> APT 소스 리스트 및 시스템 저장소를 삭제합니다..."
+	@echo ">>> APT 소스 리스트를 삭제합니다..."
 	@sudo rm -f /etc/apt/sources.list.d/local-builder-repo.list
-	@sudo rm -rf ${REPO_PATH}
 	@echo ">>> 완료."
