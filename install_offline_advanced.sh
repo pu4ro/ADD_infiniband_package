@@ -16,6 +16,7 @@ setup_env() {
     # Makefile 또는 환경변수에서 설정 가능, 없으면 기본값 사용
     export TARGET_KERNEL=${TARGET_KERNEL:-"5.15.0-25-generic"}
     export DEBS_DIR=${DEBS_DIR:-"debs"}
+    export OFED_DIR=${OFED_DIR:-""}
     
     # 색상 변수
     RED='\033[0;31m'
@@ -96,20 +97,33 @@ install_dependencies() {
 install_ofed() {
     echo -e "${YELLOW}[Step 4] Mellanox OFED 설치 시작...${NC}"
     
-    local ofed_tar=$(find . -maxdepth 1 -name "MLNX_OFED_LINUX-*.tgz" | head -n 1)
-    if [ -f "$ofed_tar" ]; then
-        echo "OFED 압축 해제 중: $ofed_tar"
-        tar -zxf "$ofed_tar"
+    local ofed_install_dir=""
+
+    # .env에 OFED_DIR이 지정되었는지 확인
+    if [ -n "${OFED_DIR}" ] && [ -d "${OFED_DIR}" ]; then
+        echo ">> .env에 지정된 OFED 디렉토리 사용: ${OFED_DIR}"
+        ofed_install_dir="${OFED_DIR}"
+    else
+        # 자동 탐지 로직
+        echo ">> OFED 디렉토리 자동 탐지 중..."
+        local ofed_tar=$(find . -maxdepth 1 -name "MLNX_OFED_LINUX-*.tgz" | head -n 1)
+        if [ -f "$ofed_tar" ]; then
+            echo "OFED 압축 해제 중: $ofed_tar"
+            tar -zxf "$ofed_tar"
+        fi
+        
+        ofed_install_dir=$(find . -maxdepth 1 -type d -name "MLNX_OFED_LINUX-*" | head -n 1)
     fi
 
-    local ofed_dir=$(find . -maxdepth 1 -type d -name "MLNX_OFED_LINUX-*" | head -n 1)
-    if [ -z "$ofed_dir" ]; then
-        echo -e "${RED}오류: OFED 설치 파일(.tgz 또는 압축 해제된 폴더)을 찾을 수 없습니다.${NC}"
+    if [ -z "$ofed_install_dir" ] || [ ! -d "$ofed_install_dir" ]; then
+        echo -e "${RED}오류: OFED 설치 디렉토리를 찾을 수 없습니다.${NC}"
+        echo "'.env' 파일에 OFED_DIR를 정확히 지정했거나, MLNX_OFED_LINUX-*.tgz 파일이 있는지 확인하세요."
         exit 1
     fi
 
     (
-        cd "$ofed_dir"
+        cd "$ofed_install_dir"
+        echo "OFED 설치 진행... (in $(pwd))"
         ./mlnxofedinstall --without-fw-update --force
     )
 

@@ -29,6 +29,8 @@
    DEBS_DIR       := my_debs
    ARCHIVE_NAME   := my_lustre_kit.tar.gz
    REPO_PATH      := /opt/my-local-repo
+   # OFED 설치 디렉토리를 직접 지정할 수 있습니다. (비워두면 자동 탐지)
+   OFED_DIR       :=
    ```
 3. `make` 명령어를 실행하면 `.env` 파일에 설정된 값을 기준으로 작업을 수행합니다. `make help` 명령어로 현재 적용된 설정을 확인할 수 있습니다.
 

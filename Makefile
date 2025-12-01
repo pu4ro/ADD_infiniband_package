@@ -12,6 +12,7 @@ export TARGET_KERNEL  ?= 5.15.0-25-generic
 export DEBS_DIR       ?= debs
 export ARCHIVE_NAME   ?= offline_kit.tar.gz
 export REPO_PATH      ?= /repo
+export OFED_DIR       ?=
 
 # --- Shell ---
 SHELL := /bin/bash
@@ -30,6 +31,7 @@ help:
 	@echo "  DEBS_DIR      = ${DEBS_DIR}"
 	@echo "  ARCHIVE_NAME  = ${ARCHIVE_NAME}"
 	@echo "  REPO_PATH     = ${REPO_PATH}"
+	@echo "  OFED_DIR      = ${OFED_DIR} (비어있으면 자동 탐지)"
 	@echo ""
 	@echo "--- 워크플로우 A: 온라인에서 처음부터 빌드 ---"
 	@echo "  make download         - 1. 모든 필수 .deb 패키지를 다운로드합니다."
@@ -47,7 +49,7 @@ help:
 	@echo "  make clean            - [모든 PC] 생성된 모든 파일, 시스템 저장소, APT 소스를 삭제합니다."
 	@echo ""
 	@echo "Configuration Override:"
-	@echo "  '.env' 파일을 생성하여 위 변수들의 값을 변경할 수 있습니다. (예: echo 'REPO_PATH := /opt/my-repo' > .env)"
+	@echo "  '.env' 파일을 생성하여 위 변수들의 값을 변경할 수 있습니다. (예: echo 'OFED_DIR := my_ofed_dir' > .env)"
 
 download:
 	@echo ">>> 의존성 패키지 다운로드를 시작합니다..."
