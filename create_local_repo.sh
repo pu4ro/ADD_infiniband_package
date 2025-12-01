@@ -9,8 +9,8 @@ if [[ "${DEBS_DIR}" = /* ]]; then
     # 절대 경로인 경우 그대로 사용
     REPO_DIR="${DEBS_DIR}"
 else
-    # 상대 경로인 경우 현재 디렉토리 기준으로 절대 경로 생성
-    REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/${DEBS_DIR}"
+    # 상대 경로인 경우 현재 작업 디렉토리 기준으로 절대 경로 생성
+    REPO_DIR="$(pwd)/${DEBS_DIR}"
 fi
 
 echo "=== 로컬 저장소 확인 ==="
