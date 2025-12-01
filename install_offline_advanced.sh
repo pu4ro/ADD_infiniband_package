@@ -13,9 +13,10 @@ set -e # 에러 발생 시 즉시 중단
 
 # --- 전역 변수 및 환경 설정 ---
 setup_env() {
-    # .env 파일이 있으면 로드
+    # .env 파일이 있으면 로드 (Makefile 형식 처리)
     if [ -f ".env" ]; then
-        export $(cat .env | grep -v '^#' | xargs)
+        # VARIABLE := value 형식을 VARIABLE=value로 변환
+        eval $(cat .env | grep -v '^#' | sed 's/:=/=/g' | sed 's/^\s*//g' | xargs)
     fi
 
     # Makefile 또는 환경변수에서 설정 가능, 없으면 기본값 사용
