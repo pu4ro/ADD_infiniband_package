@@ -87,14 +87,34 @@ check_and_install_kernel() {
 
         apt-get install -y --allow-unauthenticated linux-image-${TARGET_KERNEL} linux-headers-${TARGET_KERNEL} linux-modules-${TARGET_KERNEL} linux-modules-extra-${TARGET_KERNEL}
 
+        # GRUB 설정: 메뉴 표시 및 타임아웃 설정
         sed -i 's/GRUB_TIMEOUT_STYLE=hidden/GRUB_TIMEOUT_STYLE=menu/' /etc/default/grub
         sed -i 's/GRUB_TIMEOUT=0/GRUB_TIMEOUT=10/' /etc/default/grub
+
+        # 새로 설치한 커널을 기본 부팅 옵션으로 설정
+        echo -e "${YELLOW}>> 새로 설치한 커널을 기본 부팅 옵션으로 설정합니다...${NC}"
+
+        # GRUB_DEFAULT를 특정 커널로 설정
+        # "Advanced options for Ubuntu>Ubuntu, with Linux X.X.X-XX-generic" 형식
+        GRUB_ENTRY="Advanced options for Ubuntu>Ubuntu, with Linux ${TARGET_KERNEL}"
+
+        # 기존 GRUB_DEFAULT 설정 제거 또는 주석 처리
+        sed -i 's/^GRUB_DEFAULT=/#GRUB_DEFAULT=/' /etc/default/grub
+
+        # 새로운 GRUB_DEFAULT 추가
+        if grep -q "^#GRUB_DEFAULT=" /etc/default/grub; then
+            sed -i "/^#GRUB_DEFAULT=/a GRUB_DEFAULT=\"${GRUB_ENTRY}\"" /etc/default/grub | head -1
+        else
+            echo "GRUB_DEFAULT=\"${GRUB_ENTRY}\"" >> /etc/default/grub
+        fi
+
         update-grub
+
+        echo -e "${GREEN}>> GRUB 설정 완료: ${TARGET_KERNEL}이 기본 부팅 커널로 설정되었습니다.${NC}"
 
         echo -e "${RED}======================================================${NC}"
         echo -e "${RED} [중요] 시스템 재부팅이 필요합니다!${NC}"
-        echo -e "${RED} 재부팅 시 'Advanced options for Ubuntu'에서${NC}"
-        echo -e "${RED} 'Linux ${TARGET_KERNEL}'을 선택하여 부팅해주세요.${NC}"
+        echo -e "${RED} 재부팅 시 자동으로 ${TARGET_KERNEL} 커널로 부팅됩니다.${NC}"
         echo -e "${RED} 부팅 후 이 스크립트를 다시 실행하면 설치가 이어집니다.${NC}"
         echo -e "${RED}======================================================${NC}"
 
