@@ -9,8 +9,17 @@ set -e
 
 # .env 파일이 있으면 DEBS_DIR 로드 (Makefile 형식 처리)
 if [ -f ".env" ]; then
-    # DEBS_DIR := value 형식을 DEBS_DIR=value로 변환
-    eval $(cat .env | grep -v '^#' | grep 'DEBS_DIR' | sed 's/:=/=/g' | sed 's/\s//g')
+    while IFS= read -r line; do
+        # 주석과 빈 줄 건너뛰기
+        [[ "$line" =~ ^#.*$ ]] && continue
+        [[ -z "$line" ]] && continue
+        # DEBS_DIR만 처리
+        if [[ "$line" =~ DEBS_DIR ]]; then
+            # := 를 = 로 변환하고 export
+            line=$(echo "$line" | sed 's/:=/=/g' | sed 's/^\s*export\s*//g')
+            export "$line"
+        fi
+    done < .env
 fi
 
 # DEBS_DIR 환경 변수 처리

@@ -15,8 +15,15 @@ set -e # 에러 발생 시 즉시 중단
 setup_env() {
     # .env 파일이 있으면 로드 (Makefile 형식 처리)
     if [ -f ".env" ]; then
-        # VARIABLE := value 형식을 VARIABLE=value로 변환
-        eval $(cat .env | grep -v '^#' | sed 's/:=/=/g' | sed 's/^\s*//g' | xargs)
+        # VARIABLE := value 형식을 VARIABLE=value로 변환하고 소스로 로드
+        while IFS= read -r line; do
+            # 주석과 빈 줄 건너뛰기
+            [[ "$line" =~ ^#.*$ ]] && continue
+            [[ -z "$line" ]] && continue
+            # := 를 = 로 변환하고 export
+            line=$(echo "$line" | sed 's/:=/=/g' | sed 's/^\s*export\s*//g')
+            export "$line"
+        done < .env
     fi
 
     # Makefile 또는 환경변수에서 설정 가능, 없으면 기본값 사용
