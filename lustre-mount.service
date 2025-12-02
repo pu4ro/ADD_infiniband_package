@@ -1,0 +1,15 @@
+[Unit]
+Description=Lustre & InfiniBand Mount Service
+After=network-online.target openibd.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/lustre-mount.sh start
+ExecStop=/usr/local/bin/lustre-mount.sh stop
+TimeoutStartSec=300
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

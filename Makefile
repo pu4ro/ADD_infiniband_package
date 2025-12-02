@@ -18,7 +18,7 @@ SHELL := /bin/bash
 
 # --- Targets ---
 
-.PHONY: all help build-repo add-local-repo create-local-repo repo install-offline clean
+.PHONY: all help build-repo add-local-repo create-local-repo repo install-offline install-lustre-service clean
 
 all: help
 
@@ -38,7 +38,8 @@ help:
 	@echo "  make repo             - [온라인] 오프라인 배포용 아카이브 생성"
 	@echo ""
 	@echo "=== 오프라인 서버 워크플로우 ==="
-	@echo "  make install-offline  - [오프라인] 압축 해제 후 설치 방법 안내"
+	@echo "  make install-offline        - [오프라인] 압축 해제 후 설치 방법 안내"
+	@echo "  make install-lustre-service - [오프라인] Lustre 자동 마운트 서비스 설치"
 	@echo ""
 	@echo "=== 기타 ==="
 	@echo "  make clean            - 생성된 모든 파일 및 APT 소스 삭제"
@@ -77,6 +78,11 @@ install-offline:
 	@echo ""
 	@echo "2. 재부팅 후에는 다시 이 디렉토리로 와서 위 명령어를 반복 실행하세요."
 	@echo "========================================================================"
+
+install-lustre-service:
+	@echo ">>> Lustre 자동 마운트 서비스를 설치합니다..."
+	@chmod +x install_lustre_service.sh
+	@sudo ./install_lustre_service.sh
 
 clean:
 	@echo ">>> 생성된 파일들을 삭제합니다..."
