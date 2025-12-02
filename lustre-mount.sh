@@ -1,29 +1,16 @@
 #!/bin/bash
 # ==============================================================================
-# Lustre & InfiniBand 초기화 및 마운트 스크립트
+# Lustre & InfiniBand 초기화 스크립트
 # ==============================================================================
-# 이 스크립트는 InfiniBand와 Lustre 모듈을 로드하고 Lustre 파일시스템을 마운트합니다.
+# 이 스크립트는 InfiniBand와 Lustre 모듈을 로드하고 LNet을 설정합니다.
+# 마운트는 /etc/fstab에 정의된 항목을 통해 mount -a로 처리됩니다.
 # systemd 서비스로 사용됩니다.
 # ==============================================================================
 
 set -e
 
-# --- 설정 파일 로드 ---
-CONFIG_FILE="/etc/lustre-mount.conf"
-
-if [ -f "$CONFIG_FILE" ]; then
-    source "$CONFIG_FILE"
-else
-    echo "오류: 설정 파일 $CONFIG_FILE 을 찾을 수 없습니다."
-    exit 1
-fi
-
-# 필수 변수 확인
-if [ -z "$LUSTRE_MGS" ] || [ -z "$LUSTRE_FSNAME" ] || [ -z "$LUSTRE_MOUNT_POINT" ]; then
-    echo "오류: 설정 파일에 필수 변수가 누락되었습니다."
-    echo "LUSTRE_MGS, LUSTRE_FSNAME, LUSTRE_MOUNT_POINT를 설정하세요."
-    exit 1
-fi
+# --- 설정 파일 경로 ---
+LNET_CONFIG_FILE="/etc/lustre/lnetctl.conf"
 
 # --- 색상 변수 ---
 RED='\033[0;31m'
@@ -79,12 +66,43 @@ load_infiniband() {
     fi
 }
 
+# --- LNet 모듈 로드 및 설정 ---
+load_lnet() {
+    log_info "LNet 모듈을 로드합니다..."
+
+    # LNet 모듈 로드
+    if lsmod | grep -q "^lnet"; then
+        log_info "lnet 모듈이 이미 로드되어 있습니다."
+    else
+        log_info "lnet 모듈 로드 중..."
+        modprobe lnet
+    fi
+
+    # LNet 초기화
+    log_info "LNet을 초기화합니다..."
+    lnetctl lnet configure
+
+    # LNet 설정 파일 적용
+    if [ -f "$LNET_CONFIG_FILE" ]; then
+        log_info "LNet 설정 파일 적용: $LNET_CONFIG_FILE"
+        lnetctl import "$LNET_CONFIG_FILE"
+        log_info "LNet 설정 적용 완료 (o2ib 설정 포함)"
+    else
+        log_warn "LNet 설정 파일을 찾을 수 없습니다: $LNET_CONFIG_FILE"
+        log_warn "기본 LNet 설정으로 진행합니다."
+    fi
+
+    # LNet 상태 확인
+    log_info "LNet 상태:"
+    lnetctl net show 2>/dev/null || log_warn "LNet 네트워크 정보 조회 실패"
+}
+
 # --- Lustre 모듈 로드 ---
 load_lustre() {
-    log_info "Lustre 모듈을 로드합니다..."
+    log_info "Lustre 클라이언트 모듈을 로드합니다..."
 
-    # Lustre 관련 모듈 로드
-    local lustre_modules="libcfs lnet ksocklnd ko2iblnd ptlrpc obdclass osc lov llite"
+    # Lustre 클라이언트 모듈 로드
+    local lustre_modules="ksocklnd ko2iblnd ptlrpc obdclass osc lov llite"
     for mod in $lustre_modules; do
         if lsmod | grep -q "^$mod"; then
             log_info "모듈 $mod 이미 로드됨"
@@ -93,50 +111,45 @@ load_lustre() {
             modprobe $mod 2>/dev/null || log_warn "모듈 $mod 로드 실패 (무시됨)"
         fi
     done
-
-    # LNet 네트워크 시작
-    if lsmod | grep -q "^lnet"; then
-        log_info "LNet 네트워크 설정 확인..."
-        lctl network up 2>/dev/null || log_warn "LNet 네트워크 이미 활성화됨"
-    fi
 }
 
-# --- Lustre 마운트 ---
+# --- fstab 기반 마운트 ---
 mount_lustre() {
-    log_info "Lustre 파일시스템 마운트 준비..."
+    log_info "/etc/fstab에 정의된 Lustre 파일시스템을 마운트합니다..."
 
-    # 마운트 포인트 생성
-    if [ ! -d "$LUSTRE_MOUNT_POINT" ]; then
-        log_info "마운트 포인트 생성: $LUSTRE_MOUNT_POINT"
-        mkdir -p "$LUSTRE_MOUNT_POINT"
-    fi
-
-    # 이미 마운트되어 있는지 확인
-    if mountpoint -q "$LUSTRE_MOUNT_POINT"; then
-        log_info "Lustre가 이미 마운트되어 있습니다: $LUSTRE_MOUNT_POINT"
-        return 0
-    fi
-
-    # Lustre 마운트
-    log_info "Lustre 마운트 중: ${LUSTRE_MGS}:/${LUSTRE_FSNAME} -> $LUSTRE_MOUNT_POINT"
-    if mount -t lustre "${LUSTRE_MGS}:/${LUSTRE_FSNAME}" "$LUSTRE_MOUNT_POINT"; then
-        log_info "Lustre 마운트 성공!"
+    # fstab에 lustre 타입 항목이 있는지 확인
+    if grep -q "^[^#].*lustre" /etc/fstab; then
+        log_info "fstab에서 Lustre 항목을 발견했습니다."
+        mount -a -t lustre
+        log_info "Lustre 마운트 완료"
     else
-        log_error "Lustre 마운트 실패!"
-        return 1
+        log_warn "fstab에 Lustre 마운트 항목이 없습니다."
+        log_warn "/etc/fstab에 Lustre 파일시스템을 추가하세요."
     fi
 }
 
 # --- Lustre 언마운트 ---
 umount_lustre() {
-    log_info "Lustre 파일시스템 언마운트 중..."
+    log_info "Lustre 파일시스템을 언마운트합니다..."
 
-    if mountpoint -q "$LUSTRE_MOUNT_POINT"; then
-        umount "$LUSTRE_MOUNT_POINT"
+    # lustre 타입의 모든 마운트 해제
+    local lustre_mounts=$(mount | grep "type lustre" | awk '{print $3}')
+
+    if [ -n "$lustre_mounts" ]; then
+        echo "$lustre_mounts" | while read mount_point; do
+            log_info "언마운트 중: $mount_point"
+            umount "$mount_point"
+        done
         log_info "Lustre 언마운트 완료"
     else
-        log_info "Lustre가 마운트되어 있지 않습니다."
+        log_info "마운트된 Lustre 파일시스템이 없습니다."
     fi
+}
+
+# --- LNet 설정 해제 ---
+unconfigure_lnet() {
+    log_info "LNet 설정을 해제합니다..."
+    lnetctl lnet unconfigure 2>/dev/null || log_warn "LNet unconfigure 실패 (무시됨)"
 }
 
 # --- Lustre 모듈 언로드 ---
@@ -144,7 +157,7 @@ unload_lustre() {
     log_info "Lustre 모듈을 언로드합니다..."
 
     # 역순으로 언로드
-    local lustre_modules="llite lov osc obdclass ptlrpc ko2iblnd ksocklnd lnet libcfs"
+    local lustre_modules="llite lov osc obdclass ptlrpc ko2iblnd ksocklnd lnet"
     for mod in $lustre_modules; do
         if lsmod | grep -q "^$mod"; then
             log_info "모듈 $mod 언로드 중..."
@@ -166,18 +179,27 @@ status_check() {
     fi
     echo ""
 
+    echo "LNet 상태:"
+    if lsmod | grep -q "^lnet"; then
+        echo "  로드됨"
+        lnetctl net show 2>/dev/null || echo "  설정 안됨"
+    else
+        echo "  로드 안됨"
+    fi
+    echo ""
+
     echo "Lustre 모듈:"
-    if lsmod | grep -q lustre; then
+    if lsmod | grep -q llite; then
         echo "  로드됨"
     else
         echo "  로드 안됨"
     fi
     echo ""
 
-    echo "마운트 상태:"
-    if mountpoint -q "$LUSTRE_MOUNT_POINT"; then
-        echo "  마운트됨: $LUSTRE_MOUNT_POINT"
-        df -h "$LUSTRE_MOUNT_POINT"
+    echo "Lustre 마운트 상태:"
+    local lustre_mounts=$(mount | grep "type lustre")
+    if [ -n "$lustre_mounts" ]; then
+        echo "$lustre_mounts"
     else
         echo "  마운트 안됨"
     fi
@@ -188,6 +210,7 @@ case "$1" in
     start)
         log_info "Lustre & InfiniBand 서비스 시작..."
         load_infiniband
+        load_lnet
         load_lustre
         mount_lustre
         log_info "서비스 시작 완료"
@@ -195,6 +218,7 @@ case "$1" in
     stop)
         log_info "Lustre & InfiniBand 서비스 중지..."
         umount_lustre
+        unconfigure_lnet
         unload_lustre
         log_info "서비스 중지 완료"
         ;;

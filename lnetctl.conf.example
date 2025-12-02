@@ -1,0 +1,10 @@
+net:
+  - net type: o2ib
+    local NI(s):
+      - interfaces:
+            0: ib0
+        tunables:
+            peer_timeout: 180
+            peer_credits: 8
+            peer_buffer_credits: 0
+            credits: 256

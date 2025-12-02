@@ -1,15 +1,10 @@
 # ==============================================================================
-# Lustre 마운트 설정 파일
+# Lustre 초기화 설정 파일 (더 이상 사용되지 않음)
 # ==============================================================================
-# 이 파일을 /etc/lustre-mount.conf로 복사하여 사용하세요.
+# 이 서비스는 이제 /etc/fstab을 사용하여 Lustre를 마운트합니다.
+#
+# /etc/fstab 예제:
+# 192.168.1.10@o2ib:/lustre /mnt/lustre lustre defaults,_netdev 0 0
+#
+# LNet 설정은 /etc/lustre/lnetctl.conf 파일을 사용합니다.
 # ==============================================================================
-
-# Lustre MGS (Management Server) NID
-# 예: 192.168.1.10@tcp, 10.0.0.1@o2ib
-LUSTRE_MGS="192.168.1.10@tcp"
-
-# Lustre 파일시스템 이름
-LUSTRE_FSNAME="lustre"
-
-# 마운트 포인트
-LUSTRE_MOUNT_POINT="/mnt/lustre"
